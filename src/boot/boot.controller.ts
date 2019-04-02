@@ -1,27 +1,27 @@
 import { Controller, Post, UseInterceptors, UploadedFile} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+// import { diskStorage, memoryStorage } from 'multer';
 // import { extname } from 'path';
 
 @Controller('boot')
 export class BootController {
 
+    bootFileData = {
+        chip: Number,
+        serial: Number,
+        address: Number,
+        buff: Array,
+    };
+
     @Post('bootfile')
-    @UseInterceptors(FileInterceptor('bootfile',
-    {
-        storage: diskStorage({
-            destination: './bootfile',
-            filename: (req: any, file: { fieldname: string; }, cb: (arg0: any, arg1: string) => void) => {
-                cb(null, 'boot.bin');
-              },
-        }),
-    },
-    ))
-    async chekFile( @UploadedFile() file: Blob | File | any) {
-// tslint:disable-next-line: no-console
-        if  (!file) {console.log('nopp'); }
-// tslint:disable-next-line: no-console
-        console.log(`${file.name}`);
+    @UseInterceptors(FileInterceptor('bootfile'))
+    async bootFile( @UploadedFile() file: any) {
+        const b: Buffer = file.buffer;
+        // TODO: write parser service
+        // for (const n of file.buffer.values()) {
+        //     console.log(n);
+        // }
+        console.log(`${b.toString('hex', 0, 100)}`);
     }
 
 }
