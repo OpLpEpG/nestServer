@@ -13,6 +13,6 @@ export class BootController {
 
         const b: Buffer = file.buffer;
 
-        return this.ps.parse(b);
+        return this.ps.parseBootFile(b);
     }
 }
