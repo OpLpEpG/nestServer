@@ -1,20 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
-import { Parser, MetaRec } from '../parser';
-import { ParseView, IRecNode } from '../ViewNode';
+import { Parser } from '../parser';
+import { MetaRec } from '../metanode';
+import { ParseView } from '../ViewParse';
+import { IRecNode, IViewRec } from '../viewnode';
 
 @Injectable()
 export class MetaDataParserService {
 
-    // parse(b: Buffer): Observable<object> {
-        // return { name: 'rrrexcecdfe',
-        //          attr: {a1: 'a1', a2: 'a2'},
-        //         arr: [{o1: 'a1'}, {o2: 'o2'}]};
-    // }
-    public lastView: IRecNode;
-
-    parseBootFile(b: Buffer): object {
-        this.lastView = new ParseView(new Parser(b).parseBoot() as MetaRec).view;
-        return this.lastView;
+    parseBootFile(b: Buffer): IViewRec {
+        return new ParseView(new Parser(b).parseBoot() as MetaRec).nextView;
     }
 }

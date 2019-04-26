@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+// import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
-// tslint:disable-next-line: no-console
+
   console.log(`begin....`);
   await app.listen(3000);
 }

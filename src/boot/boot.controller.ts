@@ -1,8 +1,10 @@
-import { Controller, Post, UseInterceptors, UploadedFile, Res, Header} from '@nestjs/common';
+import { Controller, Post, UseInterceptors, UploadedFile, Res, Header, UseFilters} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MetaDataParserService } from '../meta-data-parser/meta-data-parser.service';
+import { BaseExceptionFilter } from '@nestjs/core';
 
 @Controller('boot')
+// @UseFilters(BaseExceptionFilter)
 export class BootController {
 
     constructor(private readonly ps: MetaDataParserService) {}
@@ -13,6 +15,6 @@ export class BootController {
 
         const b: Buffer = file.buffer;
 
-        return this.ps.parseBootFile(b);
+        return  (this.ps.parseBootFile(b));
     }
 }

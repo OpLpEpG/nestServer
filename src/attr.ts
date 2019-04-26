@@ -1,60 +1,4 @@
 
-export enum EMetaType {
-  varEmpty = 0,
-  varNull,
-  varSmallint,
-  varInteger,
-  varSingle,
-  varDouble,
-  varCurrency,
-  varDate,
-  varOleStr,
-  varDispatch,
-  varError,
-  varBoolean,
-  varVariant,
-  varUnknown,
-  varDecimal,
-  varUndef0F,
-  varShortInt,
-  varByte,
-  varWord,
-  varLongWord,
-  varInt64,
-  varUInt64,
-  varRecord = 0x24,
-  //   дополнительные типы данных поддерживаемые парсером
-  var_i3,
-  var_ui3,
-  var_info,
-  var_adr,
-  var_i2_15b,
-  var_ui2_15b,
-  varRamSize, // word MB
-  var_i2_10b,
-  var_i2_14b,
-  var_ui2_14b,
-  var_ui2_kadr_psk4,
-  var_ui2_kadr_all,
-  var_ui2_8b,
-  var_i2_14b_z_inv,
-  var_i2_14b_z,
-  var_inv_ui3,
-  var_inv_ui3_ltr,
-  var_inv_word,
-  var_inv_i3,
-  varChip,
-  varSerial,   // серийный номер
-  var_i2_15b_inv,
-  var_array,
-  var_i2_14b_GZ,
-  varSSDSize, // Cardinal
-  varSpeed, // BitMask Word
-  var_long_adr,
-
-  varString = 0x0100, // { Pascal string  256 } {not OLE compatible }
-}
-
 export enum EStdAttr {
   // совместимость с БД для XML проекта
   AT_CAPTION = 'Имя',
@@ -143,88 +87,11 @@ export enum EStdAttr {
   AT_FROM_KADR = 'FROM_KADR',
   AT_TO_KADR = 'TO_KADR',
 }
-// Поддерживаемые данные прибора
-// Формат (typ|{var_name{|meta}|0) type var_name: {value: number; readonly META?: string; readonly Type:typ; readonly index: number }
-// Формат массива (arr=59|L|H|typ|{arr_name}|0) type arr_name: {value: number[HL]; const META=meta; const Type = typ; index: number}
-export const STDTP = [
-  {
-    tip: EMetaType.varShortInt, attr: EStdAttr.AT_TIP, cname: 'int8_t', metalen: 'string', devlen: 1,
-    sv: (v: number, d: Buffer, idx: number) => d.writeInt8(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readInt8(idx),
-  },
-  {
-    tip: EMetaType.varByte, attr: EStdAttr.AT_TIP, cname: 'uint8_t', metalen: 'string', devlen: 1,
-    sv: (v: number, d: Buffer, idx: number) => d.writeUInt8(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readUInt8(idx),
-  },
-  {
-    tip: EMetaType.varSmallint, attr: EStdAttr.AT_TIP, cname: 'int16_t', metalen: 'string', devlen: 2,
-    sv: (v: number, d: Buffer, idx: number) => d.writeInt16LE(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readInt16LE(idx),
-  },
-  {
-    tip: EMetaType.varWord, attr: EStdAttr.AT_TIP, cname: 'uint16_t', metalen: 'string', devlen: 2,
-    sv: (v: number, d: Buffer, idx: number) => d.writeUInt16LE(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readUInt16LE(idx),
-  },
-  {
-    tip: EMetaType.varInteger, attr: EStdAttr.AT_TIP, cname: 'int32_t', metalen: 'string', devlen: 4,
-    sv: (v: number, d: Buffer, idx: number) => d.writeInt32LE(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readInt32LE(idx),
-  },
-  {
-    tip: EMetaType.varLongWord, attr: EStdAttr.AT_TIP, cname: 'uint32_t', metalen: 'string', devlen: 4,
-    sv: (v: number, d: Buffer, idx: number) => d.writeUInt32LE(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readUInt32LE(idx),
-  },
-  {
-    tip: EMetaType.varSingle, attr: EStdAttr.AT_TIP, cname: 'float', metalen: 'string', devlen: 4,
-    sv: (v: number, d: Buffer, idx: number) => d.writeFloatLE(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readFloatLE(idx),
-  },
-  {
-    tip: EMetaType.varDouble, attr: EStdAttr.AT_TIP, cname: 'double', metalen: 'string', devlen: 8,
-    sv: (v: number, d: Buffer, idx: number) => d.writeDoubleLE(v, idx),
-    gv: (d: Buffer, idx: number): number => d.readDoubleLE(idx),
-  },
-];
 
-// Дополнительные атрибуты метаданных прибора
-// Формат (typ|n) type const attrname: number = n;
-// Формат (typ|nn) type const attrname: number = nn;
-// Формат (typ|nnnn) type const attrname: number = nnnn;
-// Формат (typ=39|{str}|0) type const attrname: string = str;
-export const USRTP = [
-  { tip: EMetaType.var_adr, attr: EStdAttr.AT_ADDR, cname: 'Adr', metalen: 1 },
-  { tip: EMetaType.var_long_adr, attr: EStdAttr.AT_ADDR, cname: 'LongAdr', metalen: 4 },
-  { tip: EMetaType.var_info, attr: EStdAttr.AT_INFO, cname: 'Info', metalen: 'string' },
-  { tip: EMetaType.varChip, attr: EStdAttr.AT_CHIP, cname: 'Chip', metalen: 1 },
-  { tip: EMetaType.varSerial, attr: EStdAttr.AT_SERIAL, cname: 'Serial', metalen: 2 },
-  { tip: EMetaType.varRamSize, attr: EStdAttr.AT_RAMSIZE, cname: 'RamSize', metalen: 2 },
-  { tip: EMetaType.varSSDSize, attr: EStdAttr.AT_SSD, cname: 'SSDSize', metalen: 4 },
-  { tip: EMetaType.varSpeed, attr: EStdAttr.AT_SPEED, cname: 'MaskSpeed', metalen: 2 },
-];
-
-// CArray.Add<TChip>(Chips, Tchip.Create(1,  64, $34, 128, 'ATMega88',8));
-// CArray.Add<TChip>(Chips, Tchip.Create(2, 128, $7C, 128, 'ATMega164',8));
-// CArray.Add<TChip>(Chips, Tchip.Create(3, 128, $180, 1024, 'STM32F103CB',32,$08002000));
-// CArray.Add<TChip>(Chips, Tchip.Create(4, 128, $7C, 256, 'ATMega664',8));
-// CArray.Add<TChip>(Chips, Tchip.Create(5, 128, $400, 4096, 'STM32F401',32,$08004000));
-
-// TChip = record
-// Chip: Integer;
-// Recs: Integer;
-// InfoStart: Integer;
-// Pages: Integer;
-// Info: string;
-// cbIndex: Integer;
-// adr_sz: Integer;
-// flash_begin: DWORD;
-
-export const CHIPS = [
-  { id: 1, size: 64,  pages: 128,  meta: 0x34,  name: 'ATMega88',     bits: 8,  flash: 0x0000 },
-  { id: 2, size: 128, pages: 128,  meta: 0x7C,  name: 'ATMega164',    bits: 8,  flash: 0x0000 },
-  { id: 3, size: 128, pages: 1024, meta: 0x180, name: 'STM32F103CB',  bits: 32, flash: 0x08002000 },
-  { id: 4, size: 128, pages: 256,  meta: 0x7C,  name: 'ATMega664',    bits: 8,  flash: 0x0000 },
-  { id: 5, size: 128, pages: 4096, meta: 0x400, name: 'STM32F401',    bits: 32, flash: 0x08004000 },
+export const ROOTPATH = [
+  EStdAttr.T_WRK,
+  EStdAttr.T_RAM,
+  EStdAttr.T_EEPROM,
+  EStdAttr.T_GLU,
+  EStdAttr.T_MTR,
 ];

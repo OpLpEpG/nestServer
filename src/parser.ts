@@ -1,59 +1,28 @@
-import { STDTP, USRTP, EMetaType, EStdAttr, CHIPS } from './attr';
+import { EStdAttr, ROOTPATH } from './attr';
+import { CHIPS } from './CHIPS';
+import { STDTP, USRTP } from './STDTP';
+import { EMetaType } from './EMetaType';
+import { decode } from 'iconv-lite';
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { MetaValue, getval_t, setval_t, MetaUser, attrMetaVal_t, setUserAttr_t, MetaRec, MetaNode, isMetaRec } from './metanode';
 
-// Поддерживаемые данные прибора
-// Формат (typ|{var_name{|meta}|0)
-// Формат массива (arr=59|L|H|typ|{arr_name|meta}|0)
-
-// Дополнительные атрибуты метаданных прибора
-// Формат (typ|n) type const attrname: number = n;
-// Формат (typ|nn) type const attrname: number = nn;
-// Формат (typ|nnnn) type const attrname: number = nnnn;
-// Формат (typ=39|{str}|0) type const attrname: string = str;
-
-export type attrMetaVal_t = string | number;
-export type setUserAttr_t = (value: attrMetaVal_t, data: Buffer) => void;  // запись в буфер
-export type value_t = number | number[];
-export type setval_t = (value: value_t, data: Buffer) => void;  // запись в буфер
-export type getval_t = (data: Buffer) => value_t;               // чтение буфера
-
-// представление бинарных метаданных буфера
-export interface MetaNode {
-    readonly tip: EMetaType;
-    readonly index: number;         // смещение в буфере (например: для записи серийного номера (вычисляемый параметр))
-    readonly len: number;           // длина в буфере в байтах (вычисляемый параметр или данные record)
-    readonly value: attrMetaVal_t;        // имя параметра, или значение для атрибута
-}
-export interface MetaUser extends MetaNode {
-    readonly attr: EStdAttr;
-    setUserVal?: setUserAttr_t; // запись в буфер метаданных
-}
-export interface MetaRec extends MetaNode {
-    readonly meta?: string;         // часть строки метаданных  в формата name|meta
-    readonly devSize: number;       // длина в байтах в буфере данных от прибора
-    readonly child: MetaNode[];    // вложенные ноды для nodeRec
-}
-// представление бинарных метаданных буфера
-export interface MetaValue extends MetaNode {
-    readonly meta?: string;         // часть строки метаданных  в формата name|meta
-    readonly devIndex: number;      // вычисляемый параметр: смещение параметра в буфере при приеме данных от прибора
-    readonly devLen: number;        // длина параметра в буфере при приеме данных от прибора
-    readonly arrayLength?: number;  // число элементов массива (параметрob) (word) Формат массива (arr=59|L|H|tip|{arr_name|meta}|0)
-    getValue: getval_t;  // чтение буфера при приеме данных от прибора
-    setValue?: setval_t;  // запись в буфер при передаче данных прибору
-}
-// защитники типа
-export function isMetaUser(a: MetaNode): a is MetaUser { return (a as MetaUser).attr !== undefined; }
-export function isMetaRec(a: MetaNode): a is MetaRec { return (a as MetaRec).child !== undefined; }
-export function isMetaValue(a: MetaNode): a is MetaValue { return (a as MetaValue).devIndex !== undefined; }
-
-class ErrorParser extends Error { }
+class ErrorParser extends HttpException { }
 
 export class Parser {
 
     constructor(private readonly data: Buffer) { }
 
+    private throwLen(idx: number) {
+        if (this.data.byteLength <= idx) {
+            throw new ErrorParser(`${idx} за границей буфера ${this.data.byteLength}`, HttpStatus.BAD_REQUEST);
+        }
+    }
+
     private chekRec(idx: number): boolean {
         return this.data[idx] === EMetaType.varRecord;
+    }
+    private chekRootRec(name: string): boolean {
+        return ROOTPATH.indexOf(name as EStdAttr) !== -1;
     }
     private chekStd(idx: number): boolean {
         if (this.data[idx] === EMetaType.var_array) { return true; }
@@ -67,16 +36,9 @@ export class Parser {
 
         const end = this.data.indexOf(0, idx);
 
-        if (end < 0) { throw new ErrorParser(`${idx} not end of string`); }
+        if (end < 0) { throw new ErrorParser(`${idx} not end of string`, HttpStatus.BAD_REQUEST); }
 
-        const nameta: string = this.data.toString('latin1', idx, end);
-        // const mt = nameta.indexOf('|');
-
-        // let str: string;
-        // let meta: string|undefined;
-
-        // if (mt < 0) { str = nameta;
-        // } else { [str, meta] = nameta.split('|'); }
+        const nameta: string = decode(this.data.slice(idx, end), 'win1251');
 
         const [str, meta] = nameta.split('|');
 
@@ -92,10 +54,12 @@ export class Parser {
         if (this.data[idx] === EMetaType.var_array) {
             arrayLength = this.data.readUInt16LE(++idx);
             idx += 2;
+            this.throwLen(idx);
         }
         const { tip, attr, cname, metalen, devlen, sv, gv } = STDTP[STDTP.findIndex(v => v.tip === this.data[idx])];
         const { str, meta, strlen } = this.parseStr(++idx);
         idx += strlen;
+        this.throwLen(idx);
 
         if (arrayLength) {
             getValue = b => {
@@ -126,6 +90,7 @@ export class Parser {
         if (metalen === 'string') {
             const { str, meta, strlen } = this.parseStr(++idx);
             idx += strlen;
+            this.throwLen(idx);
             value = str;
         } else {
             switch (metalen) {
@@ -143,11 +108,12 @@ export class Parser {
                     break;
             }
             idx += metalen as number;
+            this.throwLen(idx);
         }
 
         return { tip, index, len: idx - index, value, setUserVal: sv, attr };
     }
-    private addRec(index: number): MetaRec {
+    private addRec(index: number, devIndex: number): MetaRec {
 
         const child: MetaNode[] = [];
         let idx = index;
@@ -156,27 +122,29 @@ export class Parser {
         idx += 2;
         const { str, meta, strlen } = this.parseStr(idx);
         idx += strlen;
+        devIndex = this.chekRootRec(str) ? 0 : devIndex;
 
         while (len > idx - index) {
             let m: MetaNode;
             if (this.chekRec(idx)) {
-                m = this.addRec(idx);
+                m = this.addRec(idx, devIndex + devSize);
                 devSize += (m as MetaRec).devSize;
             } else if (this.chekStd(idx)) {
-                m = this.addStd(idx, devSize);
+                m = this.addStd(idx, devIndex + devSize);
                 const mul = (m as MetaValue).arrayLength ? (m as MetaValue).arrayLength : 1;
                 devSize += (m as MetaValue).devLen * mul;
             } else if (this.chekUser(idx)) {
                 m = this.addUser(idx);
             } else {
-                throw new ErrorParser(`Parser Error ${this.data[idx]}`);
+                throw new ErrorParser(`Parser Error ${this.data[idx]}`, HttpStatus.BAD_REQUEST);
             }
             idx += m.len;
+            this.throwLen(idx);
             child.push(m);
         }
 
         if ((idx - index) !== len) {
-            throw new ErrorParser(`Node ${str} at ${index} clc len ${idx - index} != ${len} len`);
+            throw new ErrorParser(`Node ${str} at ${index} clc len ${idx - index} != ${len} len`, HttpStatus.BAD_REQUEST);
         } else {
             return {
                 tip: EMetaType.varRecord,
@@ -191,9 +159,11 @@ export class Parser {
     }
 
     parse(from: number = 0): MetaNode {
+        this.throwLen(from);
         if (!this.chekRec(from)) {
-            throw new ErrorParser(`по адресу: [${from}] = ${this.data.readUInt8(from)} не varRecord = ${EMetaType.varRecord}`);
-        } else { return this.addRec(from); }
+            throw new ErrorParser(`по адресу: [${from}] = ${this.data.readUInt8(from)} не varRecord = ${EMetaType.varRecord}`,
+                                    HttpStatus.BAD_REQUEST);
+        } else { return this.addRec(from, 0); }
     }
     toJson(root: MetaRec): any {
         // return {root.value, root.devSize};
@@ -223,7 +193,6 @@ export class Parser {
             try {
                 return this.parse(c.meta);
             } catch (error) {
-
                 if (error instanceof ErrorParser) {
                     e.push(error.message);
                 } else {
@@ -231,6 +200,6 @@ export class Parser {
                 }
             }
         }
-        throw new ErrorParser( `Can't find meta data !!! ${e.toString()}`);
+        throw new ErrorParser(`Can't find meta data !!! ${e.toString()}`, HttpStatus.BAD_REQUEST);
     }
 }
