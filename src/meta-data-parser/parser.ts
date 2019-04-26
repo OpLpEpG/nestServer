@@ -1,10 +1,10 @@
-import { EStdAttr, ROOTPATH } from './attr';
-import { CHIPS } from './CHIPS';
-import { STDTP, USRTP } from './STDTP';
-import { EMetaType } from './EMetaType';
+import { EStdAttr, ROOTPATH } from '../types/attr';
+import { CHIPS } from '../types/CHIPS';
+import { STDTP, USRTP } from '../types/STDTP';
+import { EMetaType } from '../types/EMetaType';
 import { decode } from 'iconv-lite';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { MetaValue, getval_t, setval_t, MetaUser, attrMetaVal_t, setUserAttr_t, MetaRec, MetaNode, isMetaRec } from './metanode';
+import { MetaValue, getval_t, setval_t, MetaUser, attrMetaVal_t, setUserAttr_t, MetaRec, MetaNode, isMetaRec } from '../types/metanode';
 
 class ErrorParser extends HttpException { }
 
