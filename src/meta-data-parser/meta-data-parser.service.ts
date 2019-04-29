@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Parser } from './parser';
-import { MetaRec } from '../types/metanode';
+import { MetaRec } from '../../../../types/metanode';
 import { ParseView } from './ViewParse';
-import { IViewRec } from '../types/viewnode';
+import { IViewRec } from '../../../../types/viewnode';
 
 @Injectable()
 export class MetaDataParserService {

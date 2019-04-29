@@ -1,7 +1,8 @@
-import { EStdAttr } from '../types/attr';
+import { EStdAttr } from '../../../../types/attr';
 // import { EMetaType } from './EMetaType';
-import { MetaRec, MetaValue, isMetaRec, isMetaValue, isMetaUser, MetaUser } from '../types/metanode';
-import { IRecNode, IViewNode, attr_t, IDevNode, IViewRec, isIRecNode, isIDevNode, IViewDev, isIClcNode, IViewClc } from '../types/viewnode';
+import { MetaRec, MetaValue, isMetaRec, isMetaValue, isMetaUser, MetaUser } from '../../../../types/metanode';
+import { IRecNode, IViewNode, attr_t, IDevNode, IViewRec,
+    isIRecNode, isIDevNode, IViewDev, isIClcNode, IViewClc } from '../../../../types/viewnode';
 
 /*
 export class ViewNode implements IViewNode {
