@@ -1,5 +1,5 @@
 import { EStdAttr, ROOTPATH } from '../../../../types/attr';
-import { CHIPS } from '../../../../types/CHIPS';
+import { CHIPS, chip_t } from '../../../../types/CHIPS';
 import { STDTP, USRTP } from '../../../../types/STDTP';
 import { EMetaType } from '../../../../types/EMetaType';
 import { decode } from 'iconv-lite';
@@ -187,13 +187,13 @@ export class Parser {
 
         return res;
     }
-    parseBoot(): MetaNode {
+    parseBoot(): {m: MetaNode, c: chip_t} {
 
         const e: string[] = [];
 
         for (const c of CHIPS) {
             try {
-                return this.parse(c.meta);
+                return { m: this.parse(c.meta), c};
             } catch (error) {
                 if (error instanceof ErrorParser) {
                     e.push(error.message);
