@@ -6,13 +6,7 @@ import { IViewRec } from '../../../../types/viewnode';
 import { chip_t } from '../../../../types/CHIPS';
 import { EMetaType } from '../../../../types/EMetaType';
 import { EStdAttr } from '../../../../types/attr';
-
-export interface IparseBootFileRes {
-    readonly chip?: chip_t;
-    readonly addr?: number;
-    readonly serial?: number;
-    readonly meta?: MetaNode;
-}
+import { IParseBootFile } from '../../../../types/DTOparseBootFileRes';
 
 @Injectable()
 export class MetaDataParserService {
@@ -27,14 +21,14 @@ export class MetaDataParserService {
         return n ? n.value : undefined;
     }
 
-    parseBootFile(b: Buffer): IparseBootFileRes {
+    parseBootFile(b: Buffer): IParseBootFile {
         this.pars = new Parser(b);
         this.parsBoot = this.pars.parseBoot();
         this.view = new ParseView(this.parsBoot.m as MetaRec);
         return {
             chip: this.parsBoot.c,
             addr: this.getUserAttr(EMetaType.var_adr) as number,
-            serial: this.getUserAttr(EMetaType.var_adr) as number,
+            serial: this.getUserAttr(EMetaType.varSerial) as number,
             meta: this.parsBoot.m,
         };
     }

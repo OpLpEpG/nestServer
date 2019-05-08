@@ -3,23 +3,22 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { MetaDataParserService } from '../meta-data-parser/meta-data-parser.service';
 import { BaseExceptionFilter } from '@nestjs/core';
 import { Response } from 'express';
+import { ProgrammService } from '../programm/programm.service';
 
 @Controller('boot')
 // @UseFilters(BaseExceptionFilter)
 export class BootController {
 
-    constructor(private readonly ps: MetaDataParserService) { }
+    constructor(private readonly ps: MetaDataParserService, private readonly pr: ProgrammService) { }
 
     @Post('bootfile')
     @UseInterceptors(FileInterceptor('bootfile'))
-    async bootFile(@UploadedFile() file: any, @Res() res: Response) {
+    async bootFile(@UploadedFile() file: any /*, @Res() res: Response*/) {
 
         const b: Buffer = file.buffer;
         const rez = this.ps.parseBootFile(b);
-
-        res.set('chip', rez.chip.name);
-        res.set('addr', rez.addr.toString());
-        res.set('serial', rez.serial.toString());
-        res.send(rez.meta);
+        this.pr.buffer = b;
+        this.pr.data = rez;
+        return rez;
     }
 }

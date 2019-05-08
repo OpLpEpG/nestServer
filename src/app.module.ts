@@ -6,6 +6,8 @@ import { BootModule } from './boot/boot.module';
 import { MetaDataParserService } from './meta-data-parser/meta-data-parser.service';
 import { join } from 'path';
 // import { AngularUniversalModule, applyDomino } from '@nestjs/ng-universal';
+import { ProgrammService } from './programm/programm.service';
+import { ProgrammController } from './programm/programm.controller';
 
 const BROWSER_DIR = join(process.cwd(), 'dist/browser');
 // applyDomino(global, join(BROWSER_DIR, 'index.html'));
@@ -16,7 +18,7 @@ const BROWSER_DIR = join(process.cwd(), 'dist/browser');
     //   viewsPath: BROWSER_DIR,
     //   bundle: require('e:/nodejs/Projects/umdom/bootloader/src/main.ts'),})
     ],
-  controllers: [AppController, BootController],
-  providers: [AppService, MetaDataParserService],
+  controllers: [AppController, BootController, ProgrammController],
+  providers: [AppService, MetaDataParserService, ProgrammService],
 })
 export class AppModule {}

@@ -67,18 +67,18 @@ export class Parser {
             getValue = b => {
                 const res: number[] = [];
                 for (let i = 0; i < arrayLength; i++) {
-                    res.push(gv(b, devidx + i * devlen));
+                    res.push(gv(b as Buffer, devidx + i * devlen));
                 }
                 return res;
             };
             setValue = (v, b) => {
                 for (let i = 0; i < arrayLength; i++) {
-                    sv(v[i], b, devidx + i * devlen);
+                    sv(v[i], b as Buffer, devidx + i * devlen);
                 }
             };
         } else {
-            getValue = b => gv(b, devidx);
-            setValue = (v, b) => sv(v as number, b, devidx);
+            getValue = b => gv(b as Buffer, devidx);
+            setValue = (v, b) => sv(v as number, b as Buffer, devidx);
         }
 
         return { tip, index, len: idx - index, value: str, meta, devIndex: devidx, devLen: devlen, arrayLength, getValue, setValue };
@@ -102,11 +102,11 @@ export class Parser {
                     break;
                 case 2:
                     value = this.data.readUInt16LE(++idx);
-                    sv = (vle, dta) => dta.writeUInt16LE(idx, vle as number);
+                    sv = (vle, dta) => (dta as Buffer).writeUInt16LE(idx, vle as number);
                     break;
                 case 4:
                     value = this.data.readUInt32LE(++idx);
-                    sv = (vle, dta) => dta.writeUInt32LE(idx, vle as number);
+                    sv = (vle, dta) => (dta as Buffer).writeUInt32LE(idx, vle as number);
                     break;
             }
             idx += metalen as number;
