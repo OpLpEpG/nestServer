@@ -22,12 +22,17 @@
   "dependencies": {
     "@nestjs/common": "^6.0.0",
     "@nestjs/core": "^6.0.0",
-    "@nestjs/ng-universal": "^1.0.2",
+    "@nestjs/ng-universal": "^1.1.1",
     "@nestjs/platform-express": "^6.0.0",
+    "@types/serialport": "^7.0.3",
+    "expresse": "^1.0.2",
     "iconv-lite": "^0.4.24",
+    "modbus-serial": "^7.5.1",
+    "nest-emitter": "^1.1.0",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
-    "rxjs": "^6.3.3"
+    "rxjs": "^6.3.3",
+    "sse-express": "^2.0.2"
   },
   "devDependencies": {
     "@nestjs/testing": "^6.0.0",
