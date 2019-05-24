@@ -18,7 +18,7 @@ export class MetaDataParserService {
 
     private getUserAttr(a: EMetaType): number | string | undefined {
         const n = (this.parsBoot.m as MetaRec).child.find(v => v.tip === a);
-        return n ? n.value : undefined;
+        return n && n.value; // n ? n.value : undefined;
     }
 
     parseBootFile(b: Buffer): IParseBootFile {

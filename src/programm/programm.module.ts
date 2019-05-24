@@ -4,8 +4,9 @@ import { ProgrammController } from './programm.controller';
 import { ProgrammService } from './programm.service';
 
 @Module({
-    controllers: [ProgrammController],
-    providers: [ProgrammService],
+    //  controllers: [ProgrammController],
+    //  providers: [ProgrammService],
+ //   exports: [ProgrammModule],
 })
 export class ProgrammModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {

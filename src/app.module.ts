@@ -10,16 +10,23 @@ import { ProgrammService } from './programm/programm.service';
 import { ProgrammController } from './programm/programm.controller';
 import { ProgrammModule } from './programm/programm.module';
 
+import { ConfigModule } from 'nestjs-config';
+import * as path from 'path';
+
 const BROWSER_DIR = join(process.cwd(), 'dist/browser');
 // applyDomino(global, join(BROWSER_DIR, 'index.html'));
 
 @Module({
-  imports: [BootModule, ProgrammModule,
+  imports: [ConfigModule.load(path.resolve(__dirname, 'config', '**/!(*.d).{ts,js}')),
+    ProgrammModule,
+
     // AngularUniversalModule.forRoot({
     //   viewsPath: BROWSER_DIR,
     //   bundle: require('e:/nodejs/Projects/umdom/bootloader/src/main.ts'),})
   ],
   controllers: [AppController, BootController, ProgrammController],
+  // ProgrammService - singleton объявлен глобально (только в основном модуле),
+  // BootController, ProgrammController- видят глобальный сервис только отсюда
   providers: [AppService, MetaDataParserService, ProgrammService],
 })
 export class AppModule { }

@@ -6,7 +6,9 @@ import { ProgrammService } from '../programm/programm.service';
 @Controller('boot')
 export class BootController {
 
-    constructor(private readonly ps: MetaDataParserService, private readonly pr: ProgrammService) { }
+    constructor(private readonly ps: MetaDataParserService, private readonly pr: ProgrammService) {
+        console.log('com new boot cont' + pr.ind++);
+     }
 
     @Post('bootfile')
     @UseInterceptors(FileInterceptor('bootfile'))

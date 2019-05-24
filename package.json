@@ -29,9 +29,11 @@
     "iconv-lite": "^0.4.24",
     "modbus-serial": "^7.5.1",
     "nest-emitter": "^1.1.0",
+    "nestjs-config": "^1.4.0",
     "reflect-metadata": "^0.1.12",
     "rimraf": "^2.6.2",
     "rxjs": "^6.3.3",
+    "serialport": "^7.1.5",
     "sse-express": "^2.0.2"
   },
   "devDependencies": {

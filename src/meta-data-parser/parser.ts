@@ -133,7 +133,7 @@ export class Parser {
                 devSize += (m as MetaRec).devSize;
             } else if (this.chekStd(idx)) {
                 m = this.addStd(idx, devIndex + devSize);
-                const mul = (m as MetaValue).arrayLength ? (m as MetaValue).arrayLength : 1;
+                const mul = (m as MetaValue).arrayLength || 1;
                 devSize += (m as MetaValue).devLen * mul;
             } else if (this.chekUser(idx)) {
                 m = this.addUser(idx);
