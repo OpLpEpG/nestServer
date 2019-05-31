@@ -10,7 +10,6 @@ import { async } from 'rxjs/internal/scheduler/async';
 
 class ErrorProgramm extends HttpException { }
 
-
 @Injectable()
 export class ProgrammService {
 
@@ -35,6 +34,12 @@ export class ProgrammService {
     programm(comName: string, @ConfigParam('com.baudRate', 115200) baud?: {}): Observable<any> {
 
         // this.serv.connectRTU(comName, baud).then(()=>{
+
+        // Observable connect
+        // Observable test data
+        // Observable goto boot
+        // Observable run programm
+        // Observable verify programm
 
         console.log(com, comName, baud);
 

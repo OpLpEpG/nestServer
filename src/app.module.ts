@@ -9,8 +9,13 @@ import { join } from 'path';
 import { ProgrammService } from './programm/programm.service';
 import { ProgrammController } from './programm/programm.controller';
 import { ProgrammModule } from './programm/programm.module';
-
 import { ConfigModule } from 'nestjs-config';
+import { ConnectService } from './connect/connect.service';
+import { DataService } from './data/data.service';
+import { GotoBootService } from './goto-boot/goto-boot.service';
+import { LoadProgrammService } from './load-programm/load-programm.service';
+import { VerifyProgrammService } from './verify-programm/verify-programm.service';
+
 import * as path from 'path';
 
 const BROWSER_DIR = join(process.cwd(), 'dist/browser');
@@ -27,6 +32,7 @@ const BROWSER_DIR = join(process.cwd(), 'dist/browser');
   controllers: [AppController, BootController, ProgrammController],
   // ProgrammService - singleton объявлен глобально (только в основном модуле),
   // BootController, ProgrammController- видят глобальный сервис только отсюда
-  providers: [AppService, MetaDataParserService, ProgrammService],
+  providers: [AppService, MetaDataParserService, ProgrammService, ConnectService, DataService,
+     GotoBootService, LoadProgrammService, VerifyProgrammService],
 })
 export class AppModule { }
