@@ -4,9 +4,11 @@ import { STDTP, USRTP } from '../../../../types/STDTP';
 import { EMetaType } from '../../../../types/EMetaType';
 import { decode } from 'iconv-lite';
 import { HttpException, HttpStatus } from '@nestjs/common';
-import { MetaValue, getval_t, setval_t, MetaUser,
-         attrMetaVal_t, setUserAttr_t, MetaRec,
-         MetaNode, isMetaRec } from '../../../../types/metanode';
+import {
+    MetaValue, getval_t, setval_t, MetaUser,
+    attrMetaVal_t, setUserAttr_t, MetaRec,
+    MetaNode, isMetaRec, isMetaUser
+} from '../../../../types/metanode';
 
 class ErrorParser extends HttpException { }
 
@@ -164,10 +166,10 @@ export class Parser {
         this.throwLen(from);
         if (!this.chekRec(from)) {
             throw new ErrorParser(`по адресу: [${from}] = ${this.data.readUInt8(from)} не varRecord = ${EMetaType.varRecord}`,
-                                    HttpStatus.BAD_REQUEST);
+                HttpStatus.BAD_REQUEST);
         } else { return this.addRec(from, 0); }
     }
-    toJson(root: MetaRec): any {
+    static toJson(root: MetaRec): any {
         // return {root.value, root.devSize};
         return root.value;
 
@@ -187,13 +189,18 @@ export class Parser {
 
         return res;
     }
-    parseBoot(): {m: MetaNode, c: chip_t} {
+
+    static findRoot(meta: MetaNode, t: EStdAttr): MetaNode | undefined {
+        return (meta as MetaRec).child.find(m => (isMetaUser(m) && ((m as MetaUser).attr === t)) || (m.value === t));
+    }
+
+    parseBoot(): { m: MetaNode, c: chip_t } {
 
         const e: string[] = [];
 
         for (const c of CHIPS) {
             try {
-                return { m: this.parse(c.meta), c};
+                return { m: this.parse(c.meta), c };
             } catch (error) {
                 if (error instanceof ErrorParser) {
                     e.push(error.message);

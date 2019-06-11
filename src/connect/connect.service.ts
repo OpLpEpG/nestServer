@@ -1,11 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException } from '@nestjs/common';
 import ModbusRTU from 'modbus-serial';
 import * as SerialPort from 'serialport';
 import { SerialPortOptions } from 'modbus-serial/ModbusRTU';
-import { crc16 } from 'modbus-serial/utils/crc16';
+import { EventEmitter } from 'events';
+import { MetaNode } from '../../../../types/metanode';
+import { ECommands } from '../../../../types/commands';
+import { Parser } from '../meta-data-parser/parser';
 
 // tslint:disable-next-line: no-var-requires
 const ModbusRT = require('modbus-serial');
+// tslint:disable-next-line: no-var-requires
+const crc16 = require('modbus-serial/utils/crc16');
+
+
+export const MAX_DATA_LEN = 255 - 1 - 2;
+
+class ErrorTransaction extends HttpException { }
 
 export type ConnectOptions = SerialPort.OpenOptions & SerialPortOptions;
 // export type CommPort = ModbusRTU | SerialPort;
@@ -15,7 +25,7 @@ export interface IConnection {
     disConnect: () => Promise<void>;
 }
 
-export interface ITransactionArg {
+export interface ITransactionReq {
     adr: number;
     command: number;
     expectedLen?: number;
@@ -23,14 +33,19 @@ export interface ITransactionArg {
     data?: Buffer;
 }
 export interface ITransactionResult {
-    error?: any;
+    req: ITransactionReq;
+    error?: string;
     data?: Buffer;
+}
+export interface ITransactionInfoResult extends ITransactionResult {
+    meta: MetaNode;
 }
 
 export class DevModbus extends ModbusRT implements IConnection {
 
     constructor() {
         super();
+
     }
 
     connect(path: string, options: ConnectOptions): Promise<this> {
@@ -40,64 +55,163 @@ export class DevModbus extends ModbusRT implements IConnection {
         return new Promise(resolve => { this.close(() => resolve()); });
     }
 }
+
 export class DevDev implements IConnection {
 
     private port: SerialPort;
+    private buffer: Buffer;
+    private evData: EventEmitter;
+
+    constructor() {
+        this.evData = new EventEmitter();
+        this.buffer = Buffer.alloc(0);
+    }
+
     connect(path: string, options: ConnectOptions): Promise<IConnection> {
+
         return new Promise((resolve, reject) => {
+
             options.autoOpen = false;
+
             this.port = new SerialPort(path, options);
-            this.port.open(err => err ? reject(err) : resolve(this));
-            this.port.on('data', data => {
-                console.log('Data:', data);
-            })
+
+            this.port.open(err => {
+                if (err) {
+                    reject(err);
+                } else {
+                    this.port.on('data', data => {
+                        this.buffer = Buffer.concat([this.buffer, data]);
+                        this.evData.emit('data', this.buffer);
+                        // console.log('Data:', data);
+                    });
+                    resolve(this);
+                }
+            });
         });
     }
 
     disConnect(): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.port) {
+                this.evData.removeAllListeners();
                 this.port.removeAllListeners('data');
+                this.buffer = Buffer.alloc(0);
                 this.port.close(err => err ? reject(err) : resolve());
             } else { resolve(); }
         });
     }
 
-    transactionP(arg: ITransactionArg): Promise<ITransactionResult> {
+    transactionP(req: ITransactionReq): Promise<ITransactionResult> {
+
+        // tslint:disable-next-line: no-bitwise
+
         return new Promise((resolve, reject) => {
 
-            const b = this.formPacket(arg);
+            const b = this.formPacket(req);
+            const ac = b.readUInt8(0);
+            let timOut: NodeJS.Timeout;
+            let dataCount = 0;
+            let timOutFired = false;
+            const timout = req.timout || 2000;
 
-            const cb = (error: any, bytesWritten: number): void => {
+            const cbWrite = (error: any, bytesWritten: number): void => {
                 if (error) {
                     reject(error);
-                } else if (bytesWritten !== b.length) {
-                    reject(new Error('bad len write'));
+                    // } else if (bytesWritten !== b.length) {
+                    //     reject(new Error('bad len write'));
                 } else {
-                    // set timout
-                    // brgin read
+                    timOut = setTimeout(() => {
+                        timOutFired = true;
+                        this.evData.off('data', cbRead);
+                        clearTimeout(timOut);
+                        if (dataCount === 0 && !req.expectedLen) {
+                            resolve({ req, error: 'empty' });
+                        } else {
+                            reject(new ErrorTransaction(`adr: ${req.adr} command: ${req.command} timout ${timOut},
+                                                         data answer length: ${dataCount} expected: ${req.expectedLen}`, 500));
+                        }
+                        //  timOutFired = false;
+                    }, timout);
                 }
             };
-            // clear buffer
-            this.port.write(b, cb);
+
+            const cbRead = (d: Buffer): void => {
+
+                if (timOutFired) { return; }
+
+                for (let i = 0; i < d.length - 3; i++) {
+
+                    dataCount = d.length;
+
+                    const last = dataCount - i;
+
+                    if (req.expectedLen && last < req.expectedLen) { return; }
+
+                    const n = req.expectedLen || last;
+
+                    if (d.readUInt8(i) === ac) {
+
+                        const pk = d.slice(i, n);
+
+                        if (crc16(pk) === 0) {
+
+                            this.evData.off('data', cbRead);
+                            clearTimeout(timOut);
+                            resolve({ req, data: pk.slice(1, -2) });
+                        }
+                    }
+                }
+            };
+
+            this.buffer = Buffer.alloc(0);
+            this.evData.on('data', cbRead);
+            this.port.write(b, cbWrite);
         });
     }
 
-    formPacket(arg: ITransactionArg): Buffer {
+    formPacket(req: ITransactionReq): Buffer {
         let len = 3;
-        if (Buffer.isBuffer(arg.data)) {
-            len += (arg.data as Buffer).length;
+        if (Buffer.isBuffer(req.data)) {
+            len += (req.data as Buffer).length;
         }
-        const b = Buffer.alloc(len);
+        const b = Buffer.allocUnsafe(len);
 
         // tslint:disable-next-line: no-bitwise
-        b.writeUInt8(arg.adr << 4 & arg.command, 0);
+        b.writeUInt8(req.adr << 4 | req.command, 0);
 
-        if (Buffer.isBuffer(arg.data)) {
-            (arg.data as Buffer).copy(b, 1);
+        if (Buffer.isBuffer(req.data)) {
+            (req.data as Buffer).copy(b, 1);
         }
-        b.writeUInt16LE(crc16(b.slice(0, -2)), len);
+        b.writeUInt16LE(crc16(b.slice(0, -2)), len - 2);
         return b;
+    }
+    async info(adr: number): Promise<ITransactionInfoResult> {
+        const req: ITransactionReq = { adr, command: ECommands.CMD_INFO, data: Buffer.from([3]) };
+        const r = await this.transactionP(req);
+        let len = r.data.readUInt16LE(1);
+        let b = Buffer.alloc(0);
+        let from = 0;
+        console.log(`len: ${len}`);
+        while (len) {
+            const n = (len > MAX_DATA_LEN) ? MAX_DATA_LEN : len;
+            const data = Buffer.allocUnsafe(3);
+            data.writeUInt16LE(from, 0);
+            data.writeUInt8(n, 2);
+            const ri = await this.transactionP({ adr, command: ECommands.CMD_INFO, data });
+            b = Buffer.concat([b, ri.data]);
+            console.log(`--part : ${from} n: ${n}`);
+            from += n;
+            len -= n;
+            console.log(`--end : ${from}`);
+        }
+        const meta = new Parser(b).parse();
+        return { req, meta, data: b };
+
+    }
+    async work({ adr, size }: { adr: number; size: number; }): Promise<ITransactionResult> {
+        const data = Buffer.alloc(2);
+        data.writeUInt16LE(size, 0);
+        return this.transactionP({ adr, command: ECommands.CMD_WORK, data });
     }
 }
 

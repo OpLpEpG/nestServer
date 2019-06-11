@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-//import { CommPort } from '../connect/connect.service';
+// import { CommPort } from '../connect/connect.service';
 import ModbusRTU from 'modbus-serial';
 
 @Injectable()

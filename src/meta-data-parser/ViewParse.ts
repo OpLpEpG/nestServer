@@ -141,7 +141,7 @@ export class ParseView {
     }
     toArray(): IViewNode[] {
 
-        if (this.$arr) { return this.$arr; }
+        if (this.$arr) { return this.$arr; } else { this.$arr = []; }
 
         const addcild = (r: IRecNode): void => {
             r.child.forEach(n => {
