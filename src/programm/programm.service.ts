@@ -4,9 +4,10 @@ import { Observable, Subject, from, timer, interval, of, defer, concat } from 'r
 import { take } from 'rxjs/operators';
 import com from '../config/com';
 import { Configurable, ConfigParam } from 'nestjs-config';
-import ModbusRTU, * as Modbus from 'modbus-serial';
+// import ModbusRTU, * as Modbus from 'modbus-serial';
 import { SerialPortOptions } from 'modbus-serial/ModbusRTU';
 import { async } from 'rxjs/internal/scheduler/async';
+import { ConnectService } from '../connect/connect.service';
 
 class ErrorProgramm extends HttpException { }
 
@@ -18,11 +19,7 @@ export class ProgrammService {
     ftreminate: boolean;
     ind = 1;
 
-    serv: ModbusRTU;
-
-    constructor() {
-        this.serv = new (Modbus as any)();
-
+    constructor(private serv: ConnectService) {
         console.log('com new ' + this.ind++);
     }
 
@@ -47,7 +44,7 @@ export class ProgrammService {
 
         // if (!(this.buffer && this.data)) { throw new Error(`Error not boot file`); }
 
-        const f = defer(() => this.serv.connectRTU(comName, com.options));
+        const f = defer(() => this.serv.connection.connect(comName, com.options));
 
         try {
             const res = concat(f, interval(1000 /* ms */).pipe(take(3)));

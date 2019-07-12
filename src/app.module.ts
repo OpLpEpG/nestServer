@@ -15,6 +15,7 @@ import { DataService } from './data/data.service';
 import { GotoBootService } from './goto-boot/goto-boot.service';
 import { LoadProgrammService } from './load-programm/load-programm.service';
 import { VerifyProgrammService } from './verify-programm/verify-programm.service';
+import { ConnectController } from './connect/connect.controller';
 
 import * as path from 'path';
 
@@ -29,7 +30,7 @@ const BROWSER_DIR = join(process.cwd(), 'dist/browser');
     //   viewsPath: BROWSER_DIR,
     //   bundle: require('e:/nodejs/Projects/umdom/bootloader/src/main.ts'),})
   ],
-  controllers: [AppController, BootController, ProgrammController],
+  controllers: [AppController, BootController, ProgrammController, ConnectController],
   // ProgrammService - singleton объявлен глобально (только в основном модуле),
   // BootController, ProgrammController- видят глобальный сервис только отсюда
   providers: [AppService, MetaDataParserService, ProgrammService, ConnectService, DataService,

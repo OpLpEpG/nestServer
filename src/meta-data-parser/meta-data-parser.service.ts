@@ -24,7 +24,7 @@ export class MetaDataParserService {
     parseBootFile(b: Buffer): IParseBootFile {
         this.pars = new Parser(b);
         this.parsBoot = this.pars.parseBoot();
-        this.view = new ParseView(this.parsBoot.m as MetaRec);
+        this.view = new ParseView(this.parsBoot.m as MetaRec, EStdAttr.T_WRK);
         return {
             chip: this.parsBoot.c,
             addr: this.getUserAttr(EMetaType.var_adr) as number,

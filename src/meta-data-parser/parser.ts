@@ -7,7 +7,7 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 import {
     MetaValue, getval_t, setval_t, MetaUser,
     attrMetaVal_t, setUserAttr_t, MetaRec,
-    MetaNode, isMetaRec, isMetaUser
+    MetaNode, isMetaRec, isMetaUser,
 } from '../../../../types/metanode';
 
 class ErrorParser extends HttpException { }

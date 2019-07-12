@@ -1,8 +1,10 @@
 import { EStdAttr } from '../../../../types/attr';
-// import { EMetaType } from './EMetaType';
 import { MetaRec, MetaValue, isMetaRec, isMetaValue, isMetaUser, MetaUser } from '../../../../types/metanode';
-import { IRecNode, IViewNode, attr_t, IDevNode, IViewRec,
-    isIRecNode, isIDevNode, IViewDev, isIClcNode, IViewClc } from '../../../../types/viewnode';
+import {
+    IRecNode, IViewNode, attr_t, IDevNode, IViewRec,
+    isIRecNode, isIDevNode, IViewDev, isIClcNode, IViewClc,
+} from '../../../../types/viewnode';
+import { Parser } from './parser';
 
 /*
 export class ViewNode implements IViewNode {
@@ -62,7 +64,9 @@ export class ParseView {
     private $view: IRecNode;
     private $arr: IViewNode[];
 
-    constructor(private readonly root: MetaRec) { }
+    constructor(private readonly root: MetaRec, private readonly rootPath: EStdAttr) { }
+
+    get path(): string { return this.rootPath; }
 
     private getAttrUser(meta: MetaUser): attr_t {
         return [meta.attr, meta.value];
@@ -108,7 +112,7 @@ export class ParseView {
         return { name: meta.value as string, meta, attr, child };
     }
     get view(): IRecNode {
-        if (!this.$view) { this.$view = this.getRecNode(this.root); }
+        if (!this.$view) { this.$view = this.getRecNode(Parser.findRoot(this.root, this.rootPath) as MetaRec); }
         return this.$view;
     }
 
@@ -125,8 +129,9 @@ export class ParseView {
         });
         return { name: r.name, child };
     }
-
-    get nextView(): IViewRec {
+    /// показывает Dev Clc Rec без доп атрибутов и ссылки на метаданные
+    nextView(next: Buffer): IViewRec {
+        this.updateValue(next);
         return this.getViewRec(this.view);
     }
     toJSON(): string {
@@ -137,7 +142,7 @@ export class ParseView {
                 } else {
                     return val;
                 }
-            }); // , '-');
+            }, '-');
     }
     toArray(): IViewNode[] {
 
